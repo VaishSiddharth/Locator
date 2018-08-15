@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Locator</string>
+    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_map">Map</string>
+    <string name="title_activity_police">Map</string>
+    <string name="title_activity_ambulance">Map</string>
+    <string name="title_activity_trackme">Map</string>
+    <string name="notification_text">Tap to cancel</string>
+</resources>
