@@ -1,114 +1,141 @@
 package com.example.siddharthvaish.locator;
 
+import android.Manifest;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.telephony.SmsManager;
+
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.Gravity;
-import android.widget.Toast;
 
-import com.google.android.gms.maps.model.LatLng;
 
-import java.io.IOException;
-import java.util.List;
-
-public class MyServicepo extends Service
+public class LocationUpdateService extends Service
 {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
-    String po=null;
-    int flag=0;
-    private class LocationListener implements android.location.LocationListener{
+    String cityLabel;
+
+    private class LocationListener implements android.location.LocationListener
+    {
         Location mLastLocation;
+
         public LocationListener(String provider)
         {
             Log.e(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
         }
+
         @Override
         public void onLocationChanged(Location location)
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
-            Toast toast=new Toast(getApplicationContext());
-            toast.setGravity(Gravity.BOTTOM ,0,0);
-            toast.makeText(MyServicepo.this,"Sending message to "+po,toast.LENGTH_LONG).show();
-            double latitude = location.getLatitude();
-            double longitude = location.getLongitude();
-            Geocoder geocoder = new Geocoder(getApplicationContext());
-            String result = null;
-            String resulttemp1 = null;
-
-            List<Address> addresses =
-                    null;
-            try {
-                addresses = geocoder.getFromLocation(latitude, longitude,1);
-                resulttemp1=addresses.get(0).getAddressLine(0);
-                result = addresses.get(0).getSubLocality();
-                LatLng latLng = new LatLng(latitude, longitude);
-                if(flag<1) {
-                    SmsManager smsManager = SmsManager.getDefault();
-                    smsManager.sendTextMessage(po, null, "Emergency at location "+resulttemp1+" https://www.google.com/maps/search/?api=1&query="+latitude+","+longitude, null, null);
-                    flag++;
-                    onDestroy();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
+            //updateCordinates(location);
         }
+
         @Override
         public void onProviderDisabled(String provider)
         {
             Log.e(TAG, "onProviderDisabled: " + provider);
         }
+
         @Override
         public void onProviderEnabled(String provider)
         {
             Log.e(TAG, "onProviderEnabled: " + provider);
         }
+
         @Override
         public void onStatusChanged(String provider, int status, Bundle extras)
         {
             Log.e(TAG, "onStatusChanged: " + provider);
         }
     }
+    
+    /*private void updateCordinates(final Location location) {
+    
+        final String uid =  FirebaseAuth.getInstance().getUid();
+        if(uid!=null) {
+            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+            List<Address> addresses = null;
+            try {
+                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
+                String cityName = addresses.get(0).getLocality();
+                String stateName = addresses.get(0).getAdminArea();
+                String countryName = addresses.get(0).getCountryName();
+                cityLabel = cityName + "_" + stateName + "_" + countryName;
+        
+                final DatabaseReference reference = FirebaseDatabase.getInstance().getReference()
+                        .child(Constants.userInfo).child(uid);
+        
+                final HashMap<String, Object> updateCityLabel = new HashMap<>();
+                updateCityLabel.put("cityLabel", Constants.all_location);
+                
+                reference.updateChildren(updateCityLabel).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        LatLong latLong = new LatLong(location.getLongitude(), location.getLatitude());
+    
+                        DatabaseReference reference2 = FirebaseDatabase.getInstance().getReference()
+                                .child(Constants.userInfo).child(uid).child(Constants.location);
+    
+                        reference2.setValue(latLong).addOnSuccessListener(new OnSuccessListener<Void>() {
+                            @Override
+                            public void onSuccess(Void aVoid) {
+                                Log.e(TAG, "Killing the service here!");
+                                stopSelf();
+                            }
+                        });
+                    }
+                });
+                
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }*/
+    
     LocationListener[] mLocationListeners = new LocationListener[] {
             new LocationListener(LocationManager.GPS_PROVIDER),
             new LocationListener(LocationManager.NETWORK_PROVIDER)
     };
+
     @Override
     public IBinder onBind(Intent arg0)
     {
         return null;
     }
+
     @Override
     public int onStartCommand(Intent intent, int flags, int startId)
     {
-        //Bundle bundle=getIntent().getExtras();
-        po=(String) intent.getExtras().get("PO");
         Log.e(TAG, "onStartCommand");
         super.onStartCommand(intent, flags, startId);
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
+
     @Override
     public void onCreate()
     {
         Log.e(TAG, "onCreate");
         initializeLocationManager();
         try {
-            mLocationManager.requestLocationUpdates(
-                    LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
-                    mLocationListeners[1]);
+            if (ContextCompat.checkSelfPermission(LocationUpdateService.this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)
+                    == PackageManager.PERMISSION_GRANTED) {
+                mLocationManager.requestLocationUpdates(
+                        LocationManager.NETWORK_PROVIDER, LOCATION_INTERVAL, LOCATION_DISTANCE,
+                        mLocationListeners[1]);
+            }
         } catch (java.lang.SecurityException ex) {
             Log.i(TAG, "fail to request location update, ignore", ex);
         } catch (IllegalArgumentException ex) {
@@ -124,6 +151,7 @@ public class MyServicepo extends Service
             Log.d(TAG, "gps provider does not exist " + ex.getMessage());
         }
     }
+
     @Override
     public void onDestroy()
     {
@@ -139,10 +167,14 @@ public class MyServicepo extends Service
             }
         }
     }
+
     private void initializeLocationManager() {
         Log.e(TAG, "initializeLocationManager");
         if (mLocationManager == null) {
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         }
     }
+    
+    
+    
 }

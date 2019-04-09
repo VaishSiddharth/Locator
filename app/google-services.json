@@ -1,0 +1,44 @@
+{
+  "project_info": {
+    "project_number": "286018911605",
+    "firebase_url": "https://locator-46875.firebaseio.com",
+    "project_id": "locator-46875",
+    "storage_bucket": "locator-46875.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:286018911605:android:9af046ee347c2011",
+        "android_client_info": {
+          "package_name": "com.example.siddharthvaish.locator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "286018911605-l0tc7b8dhr6us801bs4uq9a820e3iovm.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.siddharthvaish.locator",
+            "certificate_hash": "634224e708b01fcaf12e66f57f7d9395d3d1f526"
+          }
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_2qA3DMJJfXEmtXaq8SMpo5TsVuhJ0Zc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "286018911605-kjfquqj8pnb9ks199mk7e1ae6o2h8fcf.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
