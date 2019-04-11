@@ -54,11 +54,18 @@
                         android:text="Radius ( in metres)" />
 
                     <Button
-                        android:id="@+id/add._marker"
+                        android:id="@+id/add_marker"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginLeft="80dp"
                         android:text="Add marker" />
+                    <Button
+                        android:id="@+id/done"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="80dp"
+                        android:text="Done"
+                        android:visibility="gone"/>
                 </LinearLayout>
 
                 <SeekBar

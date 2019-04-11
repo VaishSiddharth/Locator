@@ -4,10 +4,12 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
@@ -33,6 +35,13 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
 
 
 /**
@@ -62,7 +71,9 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
-    Button addmarker;
+    Button addmarker, done;
+    FirebaseDatabase database = FirebaseDatabase.getInstance();
+    DatabaseReference myRef = database.getReference("Location");
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -124,6 +135,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
             mParam2 = getArguments().getString(ARG_PARAM2);
         }
     }
+
     private class LocationListener implements android.location.LocationListener {
         Location mLastLocation;
 
@@ -243,9 +255,8 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
 
         LatLng sydney = new LatLng(latitude, longitude);
         final MarkerOptions marker = new MarkerOptions().position(sydney)
-                .draggable(true)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
-                .title("Hold and drag the marker");
+                .title("Your Current Location");
         mMap.addMarker(marker);
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
@@ -264,51 +275,54 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
             // Zoom out to zoom level 10, animating with a duration of 2 seconds.
             mMap.animateCamera(CameraUpdateFactory.zoomTo(16), 2000, null);
         }
-
-        circle = mMap.addCircle(new CircleOptions()
-                .center(marker.getPosition())
-                .radius(radius)
-                .strokeWidth(2.0f)
-                .strokeColor(getResources().getColor(R.color.colorAccent))
-                .fillColor(getResources().getColor(R.color.colorPrimary)));
-        seekBar.setProgress((int) (radius / 5));
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                float radius = progress * 5;
-                circle.setRadius(radius);
-            }
+            public boolean onMarkerClick(final Marker marker) {
+                final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE);
+                pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+                pDialog.setTitleText("Delete Location");
+                pDialog.setCancelable(false);
+                pDialog.setConfirmButton("Yes", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                            @Override
+                            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                                    ModelLocation modelLocation = snapshot.getValue(ModelLocation.class);
+                                    if (modelLocation != null && snapshot.getKey() != null) {
+                                        if (modelLocation.getLatitude().equalsIgnoreCase(String.valueOf(marker.getPosition().latitude)) &&
+                                                modelLocation.getLongitude().equalsIgnoreCase(String.valueOf(marker.getPosition().longitude))) {
+                                            myRef.child(snapshot.getKey()).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
+                                                @Override
+                                                public void onSuccess(Void aVoid) {
+                                                    marker.remove();
+                                                    pDialog.dismiss();
+                                                }
+                                            });
+                                        }
+                                    }
+                                }
+                            }
 
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+                            @Override
+                            public void onCancelled(@NonNull DatabaseError databaseError) {
 
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
+                            }
+                        });
+                    }
+                });
+                pDialog.setCancelButton("No", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        pDialog.dismiss();
+                    }
+                });
+                pDialog.show();
+                return false;
             }
         });
-
-        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
-            @Override
-            public void onMarkerDragStart(Marker marker) {
-
-            }
-
-            @Override
-            public void onMarkerDrag(Marker marker) {
-
-            }
-
-            @Override
-            public void onMarkerDragEnd(Marker marker) {
-                double latitude=marker.getPosition().latitude;
-                double longitude=marker.getPosition().longitude;
-                //Log.e(TAG,String.valueOf(latitude)+"  "+String.valueOf(longitude));
-                circle.setCenter(marker.getPosition());
-            }
-        });
+        setMarkerFromDatabase();
     }
 
     @Override
@@ -347,25 +361,56 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
         seekBar = view.findViewById(R.id.radius);
         //next = view.findViewById(R.id.next);
-        addmarker=view.findViewById(R.id.add__marker);
+        addmarker = view.findViewById(R.id.add_marker);
+        done = view.findViewById(R.id.done);
         addmarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                addmarker.setVisibility(View.GONE);
+                done.setVisibility(View.VISIBLE);
                 addMarkerOnMap();
             }
         });
         return view;
     }
-    public void addMarkerOnMap()
-    {
-        LatLng sydney = new LatLng(latitude+0.0001, longitude+0.001);
+
+    public void setMarkerFromDatabase() {
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for (final DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    ModelLocation modelLocation = snapshot.getValue(ModelLocation.class);
+                    if (modelLocation != null) {
+                        double latitude = Double.parseDouble(modelLocation.getLatitude());
+                        double longitude = Double.parseDouble(modelLocation.getLongitude());
+                        int radius = Integer.parseInt(modelLocation.getArea());
+                        LatLng sydney = new LatLng(latitude, longitude);
+                        final MarkerOptions marker = new MarkerOptions().position(sydney)
+                                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
+                                .title("Location for Alert!! "+"Radius ("+radius+"m)");
+                        mMap.addMarker(marker);
+                    }
+                }
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    public void addMarkerOnMap() {
+        LatLng sydney = new LatLng(latitude + 0.0001, longitude + 0.001);
         final MarkerOptions marker = new MarkerOptions().position(sydney)
                 .draggable(true)
-                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ROSE))
                 .title("Hold and drag the marker");
         mMap.addMarker(marker);
-        latitude=marker.getPosition().latitude;
-        longitude=marker.getPosition().longitude;
+        latitude = marker.getPosition().latitude;
+        longitude = marker.getPosition().longitude;
         if (mLocationManager != null) {
             for (int i = 0; i < mLocationListeners.length; i++) {
                 try {
@@ -422,8 +467,8 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
 
             @Override
             public void onMarkerDragEnd(Marker marker) {
-                latitude=marker.getPosition().latitude;
-                longitude=marker.getPosition().longitude;
+                latitude = marker.getPosition().latitude;
+                longitude = marker.getPosition().longitude;
                 //Log.e(TAG,String.valueOf(latitude)+"  "+String.valueOf(longitude));
                 circle.setCenter(marker.getPosition());
             }
@@ -431,11 +476,36 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(Marker marker) {
+                addmarker.setVisibility(View.VISIBLE);
+                done.setVisibility(View.GONE);
                 marker.remove();
                 return false;
             }
         });
+        done.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                ModelLocation modelLocation = new ModelLocation();
+                modelLocation.latitude = String.valueOf(latitude);
+                modelLocation.longitude = String.valueOf(longitude);
+                modelLocation.area = String.valueOf(seekBar.getProgress());
+                final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.PROGRESS_TYPE);
+                pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+                pDialog.setTitleText("Loading");
+                pDialog.setCancelable(false);
+                pDialog.show();
+                myRef.push().setValue(modelLocation).addOnSuccessListener(new OnSuccessListener<Void>() {
+                    @Override
+                    public void onSuccess(Void aVoid) {
+                        addmarker.setVisibility(View.VISIBLE);
+                        done.setVisibility(View.GONE);
+                        pDialog.dismiss();
+                    }
+                });
+            }
+        });
     }
+
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
