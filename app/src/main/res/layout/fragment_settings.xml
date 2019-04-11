@@ -5,121 +5,77 @@
     android:layout_height="match_parent"
     tools:context=".SettingsFragment">
 
-    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <android.support.v7.widget.Toolbar xmlns:android="http://schemas.android.com/apk/res/android"
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:background="#fff"
-            android:elevation="2dp">
-
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="match_parent">
-
-                <ImageView
-                    android:id="@+id/back"
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:background="@drawable/quantum_ic_arrow_back_grey600_24"
-                    android:visibility="visible" />
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_centerInParent="true"
-                    android:text="My places"
-                    android:textColor="#000"
-                    android:textSize="18sp" />
-
-                <ImageView
-                    android:id="@+id/next"
-                    android:layout_width="25dp"
-                    android:layout_height="25dp"
-                    android:layout_alignParentEnd="true"
-                    android:layout_alignParentRight="true"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginRight="16dp"
-                    android:src="@drawable/quantum_ic_arrow_back_grey600_24" />
-            </RelativeLayout>
-        </android.support.v7.widget.Toolbar>
-
-        <View
-            android:id="@+id/shadow"
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_below="@+id/toolbar"
-            android:background="@color/colorPrimary" />
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
         <LinearLayout
             android:id="@+id/extra_info"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/shadow"
-            android:background="@color/quantum_grey"
-            android:baselineAligned="false"
-            android:orientation="horizontal"
-            android:padding="2dp">
+            android:background="@color/quantum_grey">
 
-
-            <LinearLayout
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/dist"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="16dp"
-                android:layout_marginLeft="16dp"
-                android:layout_weight="1"
-                android:orientation="horizontal"
-                android:padding="2dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginTop="4dp"
-                    android:src="@drawable/quantum_ic_arrow_back_grey600_24" />
-
-                <TextView
-                    android:id="@+id/dist"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="4dp"
-                    android:layout_marginLeft="4dp"
-                    android:layout_marginTop="0dp"
-                    android:layout_marginEnd="16dp"
-                    android:layout_marginRight="16dp"
-                    android:maxLines="2"
-                    android:padding="4dp"
-                    android:text="Hold and drag marker to move, get notified when someone leaves or enter your place."
-                    android:textSize="11sp" />
-            </LinearLayout>
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:maxLines="2"
+                android:padding="10dp"
+                android:text="Hold and drag marker to move, get notified when someone leaves or enter your place."
+                android:textSize="12sp" />
         </LinearLayout>
 
-        <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:map="http://schemas.android.com/apk/res-auto"
-            xmlns:tools="http://schemas.android.com/tools"
-            android:id="@+id/map"
-            android:name="com.google.android.gms.maps.SupportMapFragment"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:layout_below="@+id/extra_info"
-            tools:context=".GeofencingUtils.EditMyPlace" />
+            android:orientation="vertical"
+            android:weightSum="2">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_above="@+id/radius"
-            android:layout_margin="8dp"
-            android:text="Radius ( in metres)" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_gravity="center"
+                android:layout_weight="0.3"
+                android:gravity="center"
+                android:orientation="vertical">
 
-        <SeekBar
-            android:id="@+id/radius"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_alignParentBottom="true"
-            android:layout_marginBottom="64dp" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingLeft="15dp"
+                    android:orientation="horizontal">
 
-    </RelativeLayout>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Radius ( in metres)" />
+
+                    <Button
+                        android:id="@+id/add._marker"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginLeft="80dp"
+                        android:text="Add marker" />
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/radius"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="5dp" />
+            </LinearLayout>
+
+            <fragment
+                android:id="@+id/map"
+                android:name="com.google.android.gms.maps.SupportMapFragment"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1.7"
+                tools:context=".GeofencingUtils.EditMyPlace" />
+
+        </LinearLayout>
+    </LinearLayout>
 </FrameLayout>

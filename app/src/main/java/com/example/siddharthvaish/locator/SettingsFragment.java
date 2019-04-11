@@ -50,7 +50,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     private static final String ARG_PARAM2 = "param2";
     Button button;
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 25;
-    private static final String TAG = EditMyPlace.class.getSimpleName();
+    private static final String TAG = SettingsFragment.class.getSimpleName();
     private GoogleMap mMap;
     private SeekBar seekBar;
     private ImageView next;
@@ -62,6 +62,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
+    Button addmarker;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -343,19 +344,98 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.activity_maps, container, false);
+        View view = inflater.inflate(R.layout.fragment_settings, container, false);
         seekBar = view.findViewById(R.id.radius);
-        next = view.findViewById(R.id.next);
-        /*button=view.findViewById(R.id.button);
-        button.setOnClickListener(new View.OnClickListener() {
+        //next = view.findViewById(R.id.next);
+        addmarker=view.findViewById(R.id.add__marker);
+        addmarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(new Intent(getContext(),EditMyPlace.class));
+                addMarkerOnMap();
             }
-        });*/
+        });
         return view;
     }
+    public void addMarkerOnMap()
+    {
+        LatLng sydney = new LatLng(latitude+0.0001, longitude+0.001);
+        final MarkerOptions marker = new MarkerOptions().position(sydney)
+                .draggable(true)
+                .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
+                .title("Hold and drag the marker");
+        mMap.addMarker(marker);
+        latitude=marker.getPosition().latitude;
+        longitude=marker.getPosition().longitude;
+        if (mLocationManager != null) {
+            for (int i = 0; i < mLocationListeners.length; i++) {
+                try {
+                    mLocationManager.removeUpdates(mLocationListeners[i]);
+                } catch (Exception ex) {
+                    Log.i(TAG, "fail to remove location listners, ignore", ex);
+                }
+            }
+        }
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+        if (mMap != null) {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 16));
+            // Zoom in, animating the camera.
+            mMap.animateCamera(CameraUpdateFactory.zoomIn());
+            // Zoom out to zoom level 10, animating with a duration of 2 seconds.
+            mMap.animateCamera(CameraUpdateFactory.zoomTo(16), 2000, null);
+        }
 
+        circle = mMap.addCircle(new CircleOptions()
+                .center(marker.getPosition())
+                .radius(radius)
+                .strokeWidth(2.0f)
+                .strokeColor(getResources().getColor(R.color.colorAccent))
+                .fillColor(getResources().getColor(R.color.colorPrimary)));
+        seekBar.setProgress((int) (radius / 5));
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                float radius = progress * 5;
+                circle.setRadius(radius);
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+
+        mMap.setOnMarkerDragListener(new GoogleMap.OnMarkerDragListener() {
+            @Override
+            public void onMarkerDragStart(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDrag(Marker marker) {
+
+            }
+
+            @Override
+            public void onMarkerDragEnd(Marker marker) {
+                latitude=marker.getPosition().latitude;
+                longitude=marker.getPosition().longitude;
+                //Log.e(TAG,String.valueOf(latitude)+"  "+String.valueOf(longitude));
+                circle.setCenter(marker.getPosition());
+            }
+        });
+        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
+            @Override
+            public boolean onMarkerClick(Marker marker) {
+                marker.remove();
+                return false;
+            }
+        });
+    }
     // TODO: Rename method, update argument and hook method into UI event
     public void onButtonPressed(Uri uri) {
         if (mListener != null) {
