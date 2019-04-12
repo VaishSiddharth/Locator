@@ -73,7 +73,7 @@ public class HomeFragment extends Fragment {
         stopservice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getActivity().stopService(new Intent(getContext(), LocationUpdateService.class));
+                getActivity().startActivity(new Intent(getContext(), PushLocationsToDBActivity.class));
             }
         });
         startservice.setOnClickListener(new View.OnClickListener() {
