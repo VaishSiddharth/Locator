@@ -12,8 +12,19 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 
+import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.widget.Toast;
+
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.ArrayList;
+import java.util.List;
 
 
 public class LocationUpdateService extends Service
@@ -23,6 +34,7 @@ public class LocationUpdateService extends Service
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
     String cityLabel;
+    List<ModelLocation> locationList;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -39,7 +51,7 @@ public class LocationUpdateService extends Service
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
-            //updateCordinates(location);
+            insideLocation(location);
         }
 
         @Override
@@ -60,49 +72,47 @@ public class LocationUpdateService extends Service
             Log.e(TAG, "onStatusChanged: " + provider);
         }
     }
-    
-    /*private void updateCordinates(final Location location) {
-    
-        final String uid =  FirebaseAuth.getInstance().getUid();
-        if(uid!=null) {
-            Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-            List<Address> addresses = null;
-            try {
-                addresses = geocoder.getFromLocation(location.getLatitude(), location.getLongitude(), 1);
-                String cityName = addresses.get(0).getLocality();
-                String stateName = addresses.get(0).getAdminArea();
-                String countryName = addresses.get(0).getCountryName();
-                cityLabel = cityName + "_" + stateName + "_" + countryName;
-        
-                final DatabaseReference reference = FirebaseDatabase.getInstance().getReference()
-                        .child(Constants.userInfo).child(uid);
-        
-                final HashMap<String, Object> updateCityLabel = new HashMap<>();
-                updateCityLabel.put("cityLabel", Constants.all_location);
-                
-                reference.updateChildren(updateCityLabel).addOnSuccessListener(new OnSuccessListener<Void>() {
-                    @Override
-                    public void onSuccess(Void aVoid) {
-                        LatLong latLong = new LatLong(location.getLongitude(), location.getLatitude());
-    
-                        DatabaseReference reference2 = FirebaseDatabase.getInstance().getReference()
-                                .child(Constants.userInfo).child(uid).child(Constants.location);
-    
-                        reference2.setValue(latLong).addOnSuccessListener(new OnSuccessListener<Void>() {
-                            @Override
-                            public void onSuccess(Void aVoid) {
-                                Log.e(TAG, "Killing the service here!");
-                                stopSelf();
-                            }
-                        });
-                    }
-                });
-                
-            } catch (IOException e) {
-                e.printStackTrace();
+    public void getLocationsFromDB()
+    {
+        Log.e(TAG,"in db fun");
+        locationList=new ArrayList<ModelLocation>();
+        DatabaseReference reference= FirebaseDatabase.getInstance().getReference().child("Location");
+        reference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                for(DataSnapshot snapshot:dataSnapshot.getChildren())
+                {
+                    ModelLocation modelLocation=snapshot.getValue(ModelLocation.class);
+                    locationList.add(modelLocation);
+                }
             }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    public void insideLocation(Location location)
+    {
+        for (int i=0;i<locationList.size();i++)
+        {
+            float[] results = new float[1];
+            Location.distanceBetween(location.getLatitude(),location.getLongitude(),Double.parseDouble(locationList.get(i).getLatitude()),Double.parseDouble(locationList.get(i).getLongitude()),results);
+            float distanceInMeters = results[0];
+            //Log.e(TAG,String.valueOf(locationList.get(i).getArea()));
+            if(distanceInMeters<=Float.parseFloat(locationList.get(i).getArea()))
+            {
+                Toast.makeText(getApplicationContext(),"Inside location",Toast.LENGTH_LONG).show();
+            }
+            else
+            {
+                Toast.makeText(getApplicationContext(),"Not Inside location",Toast.LENGTH_LONG).show();
+            }
+
         }
-    }*/
+    }
     
     LocationListener[] mLocationListeners = new LocationListener[] {
             new LocationListener(LocationManager.GPS_PROVIDER),
@@ -127,6 +137,7 @@ public class LocationUpdateService extends Service
     public void onCreate()
     {
         Log.e(TAG, "onCreate");
+        getLocationsFromDB();
         initializeLocationManager();
         try {
             if (ContextCompat.checkSelfPermission(LocationUpdateService.this,

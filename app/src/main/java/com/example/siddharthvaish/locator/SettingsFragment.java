@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.location.Address;
+import android.location.Geocoder;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -13,6 +15,8 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -20,6 +24,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -40,6 +45,10 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.Locale;
 
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
@@ -74,6 +83,8 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     Button addmarker, done;
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     DatabaseReference myRef = database.getReference("Location");
+    int flagfordialog=0;
+    TextView radiustext;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -278,13 +289,26 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
         mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
             @Override
             public boolean onMarkerClick(final Marker marker) {
+                Geocoder geocoder;
+                List<Address> addresses = null;
+                geocoder = new Geocoder(getContext(), Locale.getDefault());
+
+                try {
+                    addresses = geocoder.getFromLocation(marker.getPosition().latitude, marker.getPosition().longitude, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
                 final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE);
                 pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
-                pDialog.setTitleText("Delete Location");
+                pDialog.setTitleText("Location Info");
+                pDialog.setContentText(address+"\n");
                 pDialog.setCancelable(false);
-                pDialog.setConfirmButton("Yes", new SweetAlertDialog.OnSweetClickListener() {
+                pDialog.setConfirmButton("Delete Location", new SweetAlertDialog.OnSweetClickListener() {
                     @Override
-                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                    public void onClick(final SweetAlertDialog sweetAlertDialog) {
+                        flagfordialog=0;
                         myRef.addListenerForSingleValueEvent(new ValueEventListener() {
                             @Override
                             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -293,15 +317,34 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                                     if (modelLocation != null && snapshot.getKey() != null) {
                                         if (modelLocation.getLatitude().equalsIgnoreCase(String.valueOf(marker.getPosition().latitude)) &&
                                                 modelLocation.getLongitude().equalsIgnoreCase(String.valueOf(marker.getPosition().longitude))) {
+                                            flagfordialog=1;
                                             myRef.child(snapshot.getKey()).removeValue().addOnSuccessListener(new OnSuccessListener<Void>() {
                                                 @Override
                                                 public void onSuccess(Void aVoid) {
                                                     marker.remove();
+                                                    circle.remove();
                                                     pDialog.dismiss();
+                                                    Toast.makeText(getContext(),"Sucessfully Deleted",Toast.LENGTH_LONG).show();
                                                 }
                                             });
                                         }
                                     }
+                                }
+                                if(flagfordialog==0) {
+                                    final SweetAlertDialog pDialog1 = new SweetAlertDialog(getContext(), SweetAlertDialog.ERROR_TYPE);
+                                    pDialog1.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
+                                    pDialog1.setTitleText("You can't delete this location!!");
+                                    pDialog1.setCancelable(false);
+                                    pDialog1.setConfirmButton("Close", new SweetAlertDialog.OnSweetClickListener() {
+                                        @Override
+                                        public void onClick(SweetAlertDialog sweetAlertDialog) {
+                                            pDialog1.dismiss();
+                                            pDialog.dismiss();
+
+                                        }
+                                    });
+                                    pDialog1.show();
+
                                 }
                             }
 
@@ -312,7 +355,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                         });
                     }
                 });
-                pDialog.setCancelButton("No", new SweetAlertDialog.OnSweetClickListener() {
+                pDialog.setCancelButton("Close", new SweetAlertDialog.OnSweetClickListener() {
                     @Override
                     public void onClick(SweetAlertDialog sweetAlertDialog) {
                         pDialog.dismiss();
@@ -363,11 +406,14 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
         //next = view.findViewById(R.id.next);
         addmarker = view.findViewById(R.id.add_marker);
         done = view.findViewById(R.id.done);
+        radiustext=view.findViewById(R.id.radiustext);
         addmarker.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 addmarker.setVisibility(View.GONE);
                 done.setVisibility(View.VISIBLE);
+                seekBar.setVisibility(View.VISIBLE);
+                radiustext.setVisibility(View.VISIBLE);
                 addMarkerOnMap();
             }
         });
@@ -375,7 +421,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     }
 
     public void setMarkerFromDatabase() {
-        myRef.addValueEventListener(new ValueEventListener() {
+        myRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (final DataSnapshot snapshot : dataSnapshot.getChildren()) {
@@ -384,10 +430,26 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                         double latitude = Double.parseDouble(modelLocation.getLatitude());
                         double longitude = Double.parseDouble(modelLocation.getLongitude());
                         int radius = Integer.parseInt(modelLocation.getArea());
+                        Geocoder geocoder;
+                        List<Address> addresses = null;
+                        geocoder = new Geocoder(getContext(), Locale.getDefault());
+
+                        try {
+                            addresses = geocoder.getFromLocation(latitude, longitude, 1); // Here 1 represent max location result to returned, by documents it recommended 1 to 5
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+                        String address = addresses.get(0).getAddressLine(0); // If any additional address line present than only, check with max available address lines by getMaxAddressLineIndex()
+                        String city = addresses.get(0).getLocality();
+                        String state = addresses.get(0).getAdminArea();
+                        String country = addresses.get(0).getCountryName();
+                        String postalCode = addresses.get(0).getPostalCode();
+                        String knownName = addresses.get(0).getFeatureName(); // Only if available else return NULL
                         LatLng sydney = new LatLng(latitude, longitude);
                         final MarkerOptions marker = new MarkerOptions().position(sydney)
                                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_CYAN))
-                                .title("Location for Alert!! "+"Radius ("+radius+"m)");
+                                .title(address + "\nRadius (" + radius + "m)");
                         mMap.addMarker(marker);
                     }
                 }
@@ -439,8 +501,9 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                float radius = progress * 5;
+                final float radius = progress * 5;
                 circle.setRadius(radius);
+                radiustext.setText("Radius is ("+radius+" meter)");
             }
 
             @Override
@@ -473,15 +536,6 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                 circle.setCenter(marker.getPosition());
             }
         });
-        mMap.setOnMarkerClickListener(new GoogleMap.OnMarkerClickListener() {
-            @Override
-            public boolean onMarkerClick(Marker marker) {
-                addmarker.setVisibility(View.VISIBLE);
-                done.setVisibility(View.GONE);
-                marker.remove();
-                return false;
-            }
-        });
         done.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -491,7 +545,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                 modelLocation.area = String.valueOf(seekBar.getProgress());
                 final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.PROGRESS_TYPE);
                 pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
-                pDialog.setTitleText("Loading");
+                pDialog.setTitleText("Loading...");
                 pDialog.setCancelable(false);
                 pDialog.show();
                 myRef.push().setValue(modelLocation).addOnSuccessListener(new OnSuccessListener<Void>() {
@@ -499,6 +553,10 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                     public void onSuccess(Void aVoid) {
                         addmarker.setVisibility(View.VISIBLE);
                         done.setVisibility(View.GONE);
+                        seekBar.setVisibility(View.GONE);
+                        radiustext.setVisibility(View.GONE);
+                        circle.remove();
+                        Toast.makeText(getContext(),"Sucessfully Added",Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
                     }
                 });
