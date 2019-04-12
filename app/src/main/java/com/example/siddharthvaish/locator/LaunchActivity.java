@@ -9,6 +9,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.widget.TextView;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 
 public class LaunchActivity extends AppCompatActivity implements HomeFragment.OnFragmentInteractionListener ,
@@ -18,7 +20,10 @@ public class LaunchActivity extends AppCompatActivity implements HomeFragment.On
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_launch);
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("test");
 
+        myRef.setValue("Working");
         //loading the default fragment
         loadFragment(new HomeFragment());
 
