@@ -49,9 +49,11 @@
                     android:orientation="horizontal">
 
                     <TextView
+                        android:id="@+id/radiustext"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Radius ( in metres)" />
+                        android:text="Radius ( in metres)"
+                        android:visibility="gone"/>
 
                     <Button
                         android:id="@+id/add_marker"
@@ -72,7 +74,8 @@
                     android:id="@+id/radius"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:padding="5dp" />
+                    android:padding="5dp"
+                    android:visibility="gone"/>
             </LinearLayout>
 
             <fragment
