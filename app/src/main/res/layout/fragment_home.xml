@@ -8,25 +8,52 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="horizontal"
         android:layout_gravity="center"
-        android:gravity="center">
-    <!-- TODO: Update blank fragment layout -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:text="@string/hello_blank_fragment"
-        android:visibility="gone"/>
-    <Button
-        android:id="@+id/startservice"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Start service"/>
-    <Button
-        android:id="@+id/stopservice"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Stop service"/>
+        android:gravity="center"
+        android:orientation="vertical">
+        <!-- TODO: Update blank fragment layout -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="@string/hello_blank_fragment"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/namePoliceStation"
+            android:text="Police Station Name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="25sp"/>
+        <TextView
+            android:id="@+id/phonePoliceStation"
+            android:text="Police Station Phone Number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="25sp"/>
+
+        <Button
+            android:id="@+id/startservice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start service" />
+
+        <Button
+            android:id="@+id/stopservice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stop service" />
+
+        <TextView
+            android:id="@+id/nameHospital"
+            android:text="Hospital Name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="25sp"/>
+        <TextView
+            android:id="@+id/phoneHospital"
+            android:text="Hospital Phone Number"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="25sp"/>
     </LinearLayout>
 
 </FrameLayout>
