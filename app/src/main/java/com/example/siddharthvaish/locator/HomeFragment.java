@@ -216,7 +216,7 @@ public class HomeFragment extends Fragment {
                         float distanceInMeters = results[0];
                         //Log.e(TAG,String.valueOf(distanceInMeters));
                         if (shortestDistancePolice > distanceInMeters) {
-                            Log.e(TAG, String.valueOf(distanceInMeters));
+                            //Log.e(TAG, String.valueOf(distanceInMeters));
                             shortestDistancePolice = distanceInMeters;
                             modelPlaceList.add(modelPlace);
                         }
@@ -260,7 +260,7 @@ public class HomeFragment extends Fragment {
                         float distanceInMeters = results[0];
                         //Log.e(TAG,String.valueOf(distanceInMeters));
                         if (shortestDistanceHospital > distanceInMeters) {
-                            Log.e(TAG, String.valueOf(distanceInMeters));
+                            //Log.e(TAG, String.valueOf(distanceInMeters));
                             shortestDistanceHospital = distanceInMeters;
                             modelPlaceListHospital.add(modelPlace);
                         }

@@ -1,6 +1,7 @@
 package com.example.siddharthvaish.locator;
 
 import android.Manifest;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
@@ -14,6 +15,7 @@ import android.os.IBinder;
 
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -27,62 +29,57 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class LocationUpdateService extends Service
-{
+public class LocationUpdateService extends Service {
     private static final String TAG = "BOOMBOOMTESTGPS";
     private LocationManager mLocationManager = null;
     private static final int LOCATION_INTERVAL = 1000;
     private static final float LOCATION_DISTANCE = 10f;
     String cityLabel;
     List<ModelLocation> locationList;
+    int locationInsideFlag = 0;
+    ModelLocation dwellLocation;
+    ModelLocation dwellLocationprev = null;
 
-    private class LocationListener implements android.location.LocationListener
-    {
+    private class LocationListener implements android.location.LocationListener {
         Location mLastLocation;
 
-        public LocationListener(String provider)
-        {
+        public LocationListener(String provider) {
             Log.e(TAG, "LocationListener " + provider);
             mLastLocation = new Location(provider);
         }
 
         @Override
-        public void onLocationChanged(Location location)
-        {
+        public void onLocationChanged(Location location) {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
             insideLocation(location);
         }
 
         @Override
-        public void onProviderDisabled(String provider)
-        {
+        public void onProviderDisabled(String provider) {
             Log.e(TAG, "onProviderDisabled: " + provider);
         }
 
         @Override
-        public void onProviderEnabled(String provider)
-        {
+        public void onProviderEnabled(String provider) {
             Log.e(TAG, "onProviderEnabled: " + provider);
         }
 
         @Override
-        public void onStatusChanged(String provider, int status, Bundle extras)
-        {
+        public void onStatusChanged(String provider, int status, Bundle extras) {
             Log.e(TAG, "onStatusChanged: " + provider);
         }
     }
-    public void getLocationsFromDB()
-    {
-        Log.e(TAG,"in db fun");
-        locationList=new ArrayList<ModelLocation>();
-        DatabaseReference reference= FirebaseDatabase.getInstance().getReference().child("Location");
+
+    public void getLocationsFromDB() {
+        Log.e(TAG, "in db fun");
+        locationList = new ArrayList<ModelLocation>();
+        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Location");
         reference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                for(DataSnapshot snapshot:dataSnapshot.getChildren())
-                {
-                    ModelLocation modelLocation=snapshot.getValue(ModelLocation.class);
+                for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                    ModelLocation modelLocation = snapshot.getValue(ModelLocation.class);
                     locationList.add(modelLocation);
                 }
             }
@@ -94,48 +91,73 @@ public class LocationUpdateService extends Service
         });
     }
 
-    public void insideLocation(Location location)
-    {
-        for (int i=0;i<locationList.size();i++)
-        {
+    public void insideLocation(Location location) {
+        Log.e(TAG, "insideLocation");
+        dwellLocation = null;
+        for (int i = 0; i < locationList.size(); i++) {
             float[] results = new float[1];
-            Location.distanceBetween(location.getLatitude(),location.getLongitude(),Double.parseDouble(locationList.get(i).getLatitude()),Double.parseDouble(locationList.get(i).getLongitude()),results);
+            Location.distanceBetween(location.getLatitude(), location.getLongitude(), Double.parseDouble(locationList.get(i).getLatitude()), Double.parseDouble(locationList.get(i).getLongitude()), results);
             float distanceInMeters = results[0];
+            Log.e(TAG, "distanceInMeters outside" + distanceInMeters);
             //Log.e(TAG,String.valueOf(locationList.get(i).getArea()));
-            if(distanceInMeters<=Float.parseFloat(locationList.get(i).getArea()))
-            {
-                Toast.makeText(getApplicationContext(),"Inside location",Toast.LENGTH_LONG).show();
+            if (distanceInMeters <= Float.parseFloat(locationList.get(i).getArea())) {
+                Log.e(TAG, "distanceInMeters inside" + distanceInMeters);
+                dwellLocation = locationList.get(i);
+                locationInsideFlag = 1;
             }
-            else
-            {
-                Toast.makeText(getApplicationContext(),"Not Inside location",Toast.LENGTH_LONG).show();
+        }
+        sendSMS(location);
+    }
+
+    public void sendSMS(Location location) {
+        if (dwellLocation != null && locationInsideFlag == 1) {
+            Log.e(TAG, "sendSMS inside dwell");
+            if (dwellLocationprev == null) {
+                dwellLocationprev = dwellLocation;
+                Log.e(TAG, "null if" + dwellLocationprev);
+                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
+                SmsManager smsManager = SmsManager.getDefault();
+                smsManager.sendTextMessage("+919149386335", null, "Reached " + location.getLatitude() + "," + location.getLongitude(), null, null);
+            } else if (!(dwellLocation.equals(dwellLocationprev))) {
+                Log.e(TAG, "dwell not same as before" + dwellLocation);
+                dwellLocationprev = dwellLocation;
+                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
+                SmsManager smsManager = SmsManager.getDefault();
+                smsManager.sendTextMessage("+919149386335", null, "Reached " + location.getLatitude() + "," + location.getLongitude(), null, null);
+            } else {
+                Log.e(TAG, "Same dwell" + dwellLocationprev);
             }
+        } else if (dwellLocation == null && locationInsideFlag == 1) {
+            Log.e(TAG, "exit dwell" + dwellLocationprev);
+            locationInsideFlag = 0;
+            Toast.makeText(getApplicationContext(), "Outside location", Toast.LENGTH_LONG).show();
+            SmsManager smsManager = SmsManager.getDefault();
+            smsManager.sendTextMessage("+919149386335", null, "Left " + location.getLatitude() + "," + location.getLongitude(), null, null);
+        } else {
+            Log.e(TAG, "sendSMS else");
 
         }
     }
-    
-    LocationListener[] mLocationListeners = new LocationListener[] {
+
+    LocationListener[] mLocationListeners = new LocationListener[]{
             new LocationListener(LocationManager.GPS_PROVIDER),
             new LocationListener(LocationManager.NETWORK_PROVIDER)
     };
 
     @Override
-    public IBinder onBind(Intent arg0)
-    {
+    public IBinder onBind(Intent arg0) {
         return null;
     }
 
     @Override
-    public int onStartCommand(Intent intent, int flags, int startId)
-    {
+    public int onStartCommand(Intent intent, int flags, int startId) {
         Log.e(TAG, "onStartCommand");
         super.onStartCommand(intent, flags, startId);
         return START_STICKY;
     }
 
     @Override
-    public void onCreate()
-    {
+    public void onCreate() {
         Log.e(TAG, "onCreate");
         getLocationsFromDB();
         initializeLocationManager();
@@ -164,8 +186,7 @@ public class LocationUpdateService extends Service
     }
 
     @Override
-    public void onDestroy()
-    {
+    public void onDestroy() {
         Log.e(TAG, "onDestroy");
         super.onDestroy();
         if (mLocationManager != null) {
@@ -185,7 +206,6 @@ public class LocationUpdateService extends Service
             mLocationManager = (LocationManager) getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
         }
     }
-    
-    
-    
+
+
 }
