@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -11,6 +12,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
+import android.telephony.SmsManager;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -19,6 +21,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
@@ -32,6 +35,10 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import cn.pedant.SweetAlert.SweetAlertDialog;
+
+import static java.net.Proxy.Type.HTTP;
 
 
 /**
@@ -70,6 +77,8 @@ public class HomeFragment extends Fragment {
     TextView phonePoliceStation;
     TextView nameHospital;
     TextView phoneHospital;
+    ImageView emergencyPolice,emergencyHospital;
+    String namepolice,namehospital,phoneNumberpolice,phoneNumberHospital;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -222,8 +231,8 @@ public class HomeFragment extends Fragment {
                         else
                             break;
                     }
-                    String namepolice = modelPlaceList.get(index).getName();
-                    String phoneNumberpolice = modelPlaceList.get(index).getPhoneNumber();
+                    namepolice = modelPlaceList.get(index).getName();
+                    phoneNumberpolice = modelPlaceList.get(index).getPhoneNumber();
                     namePoliceStation.setText(namepolice);
                     phonePoliceStation.setText(phoneNumberpolice);
                 }
@@ -266,8 +275,8 @@ public class HomeFragment extends Fragment {
                         else
                             break;
                     }
-                    String namehospital = modelPlaceListHospital.get(index).getName();
-                    String phoneNumberHospital = modelPlaceListHospital.get(index).getPhoneNumber();
+                    namehospital = modelPlaceListHospital.get(index).getName();
+                    phoneNumberHospital = modelPlaceListHospital.get(index).getPhoneNumber();
                     nameHospital.setText(namehospital);
                     phoneHospital.setText(phoneNumberHospital);
                 }
@@ -291,6 +300,8 @@ public class HomeFragment extends Fragment {
         phonePoliceStation = view.findViewById(R.id.phonePoliceStation);
         nameHospital = view.findViewById(R.id.nameHospital);
         phoneHospital = view.findViewById(R.id.phoneHospital);
+        emergencyHospital=view.findViewById(R.id.emergencyhospital);
+        emergencyPolice=view.findViewById(R.id.emergencypolice);
         stopservice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -304,7 +315,71 @@ public class HomeFragment extends Fragment {
                 getActivity().startService(new Intent(getContext(), LocationUpdateService.class));
             }
         });
+        emergencyoptions();
         return view;
+    }
+    public void emergencyoptions()
+    {
+        emergencyPolice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE);
+                pDialog.setTitleText("Emergency!!");
+                pDialog.setContentText("If you click send a message will be send to the Police Station.\n");
+                pDialog.setCancelable(true);
+                pDialog.setCancelButton("Call", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        Intent intent = new Intent(Intent.ACTION_DIAL);
+                        intent.setData(Uri.parse("tel:" + phoneNumberpolice));
+                        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+                            startActivity(intent);
+                        }
+                        pDialog.dismiss();
+                    }
+                });
+                pDialog.setConfirmButton("Send", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        SmsManager smsManager = SmsManager.getDefault();
+                        smsManager.sendTextMessage("+919149386335", null, "Emergency at location https://www.google.com/maps/search/?api=1&query="+latitude+","+longitude, null, null);
+                        Toast.makeText(getContext(),"Sending SMS",Toast.LENGTH_LONG).show();
+                        pDialog.dismiss();
+                    }
+                });
+                pDialog.show();
+            }
+        });
+        emergencyHospital.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.WARNING_TYPE);
+                pDialog.setTitleText("Emergency!!");
+                pDialog.setContentText("If you click send a message will be send to the Hospital.\n");
+                pDialog.setCancelable(true);
+                pDialog.setCancelButton("Call", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        Intent intent = new Intent(Intent.ACTION_DIAL);
+                        intent.setData(Uri.parse("tel:" + phoneNumberHospital));
+                        if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
+                            startActivity(intent);
+                        }
+                        pDialog.dismiss();
+                    }
+                });
+                pDialog.setConfirmButton("Send", new SweetAlertDialog.OnSweetClickListener() {
+                    @Override
+                    public void onClick(SweetAlertDialog sweetAlertDialog) {
+                        SmsManager smsManager = SmsManager.getDefault();
+                        smsManager.sendTextMessage("+919149386335", null, "Ambulance required at location https://www.google.com/maps/search/?api=1&query="+latitude+","+longitude, null, null);
+                        Toast.makeText(getContext(),"Sending SMS",Toast.LENGTH_LONG).show();
+                        pDialog.dismiss();
+                    }
+                });
+                pDialog.show();
+            }
+        });
     }
 
     // TODO: Rename method, update argument and hook method into UI event

@@ -8,52 +8,84 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_gravity="center"
-        android:gravity="center"
+        android:layout_marginBottom="70dp"
         android:orientation="vertical">
-        <!-- TODO: Update blank fragment layout -->
-        <TextView
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="20dp"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/startservice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Start Tracking" />
+
+            <Button
+                android:id="@+id/stopservice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stop Tracking" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text="@string/hello_blank_fragment"
-            android:visibility="gone" />
-        <TextView
-            android:id="@+id/namePoliceStation"
-            android:text="Police Station Name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="25sp"/>
-        <TextView
-            android:id="@+id/phonePoliceStation"
-            android:text="Police Station Phone Number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="25sp"/>
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical">
+            <!-- TODO: Update blank fragment layout -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:text="@string/hello_blank_fragment"
+                android:visibility="gone" />
 
-        <Button
-            android:id="@+id/startservice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Start service" />
+            <ImageView
+                android:id="@+id/emergencypolice"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/police" />
 
-        <Button
-            android:id="@+id/stopservice"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Stop service" />
+            <TextView
+                android:id="@+id/namePoliceStation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Police Station Name"
+                android:textSize="15sp" />
 
-        <TextView
-            android:id="@+id/nameHospital"
-            android:text="Hospital Name"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="25sp"/>
-        <TextView
-            android:id="@+id/phoneHospital"
-            android:text="Hospital Phone Number"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="25sp"/>
+            <TextView
+                android:id="@+id/phonePoliceStation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="20dp"
+                android:text="Police Station Phone Number"
+                android:textSize="15sp" />
+
+            <ImageView
+                android:id="@+id/emergencyhospital"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/ambulance" />
+
+            <TextView
+                android:id="@+id/nameHospital"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hospital Name"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/phoneHospital"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hospital Phone Number"
+                android:textSize="15sp" />
+        </LinearLayout>
     </LinearLayout>
-
 </FrameLayout>
