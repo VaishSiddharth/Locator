@@ -17,6 +17,7 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.location.Geofence;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -25,6 +26,11 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import io.nlopez.smartlocation.OnGeofencingTransitionListener;
+import io.nlopez.smartlocation.SmartLocation;
+import io.nlopez.smartlocation.geofencing.model.GeofenceModel;
+import io.nlopez.smartlocation.geofencing.utils.TransitionGeofence;
 
 
 public class LocationUpdateService extends Service
@@ -35,6 +41,7 @@ public class LocationUpdateService extends Service
     private static final float LOCATION_DISTANCE = 10f;
     String cityLabel;
     List<ModelLocation> locationList;
+    List<GeofenceModel> geofenceModelList;
 
     private class LocationListener implements android.location.LocationListener
     {
@@ -51,7 +58,8 @@ public class LocationUpdateService extends Service
         {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
-            insideLocation(location);
+            //insideLocation(location);
+            //geofencing();
         }
 
         @Override
@@ -76,6 +84,7 @@ public class LocationUpdateService extends Service
     {
         Log.e(TAG,"in db fun");
         locationList=new ArrayList<ModelLocation>();
+        geofenceModelList=new ArrayList<GeofenceModel>();
         DatabaseReference reference= FirebaseDatabase.getInstance().getReference().child("Location");
         reference.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
@@ -83,8 +92,19 @@ public class LocationUpdateService extends Service
                 for(DataSnapshot snapshot:dataSnapshot.getChildren())
                 {
                     ModelLocation modelLocation=snapshot.getValue(ModelLocation.class);
-                    locationList.add(modelLocation);
+                    if(modelLocation!=null)
+                    {
+                        locationList.add(modelLocation);
+                        GeofenceModel geofenceModel = new GeofenceModel.Builder("idNo"+geofenceModelList.size())
+                                .setTransition(Geofence.GEOFENCE_TRANSITION_ENTER|Geofence.GEOFENCE_TRANSITION_DWELL|Geofence.GEOFENCE_TRANSITION_EXIT)
+                                .setLatitude(Double.parseDouble(modelLocation.getLatitude()))
+                                .setLongitude(Double.parseDouble(modelLocation.getLongitude()))
+                                .setRadius(Float.parseFloat(modelLocation.getArea()))
+                                .build();
+                        geofenceModelList.add(geofenceModel);
+                    }
                 }
+                geofencing();
             }
 
             @Override
@@ -118,6 +138,40 @@ public class LocationUpdateService extends Service
             new LocationListener(LocationManager.GPS_PROVIDER),
             new LocationListener(LocationManager.NETWORK_PROVIDER)
     };
+    public void geofencing()
+    {
+        Log.e(TAG,"geofence fun");
+        /*for (int i=0;i<geofenceModelList.size();i++)
+        {
+            SmartLocation.with(getApplicationContext()).geofencing()
+                    .add(geofenceModelList.get(i));
+        }*/
+        SmartLocation.with(getApplicationContext()).geofencing()
+                .add(geofenceModelList.get(0))
+                .add(geofenceModelList.get(1))
+                .add(geofenceModelList.get(2))
+                .start(new OnGeofencingTransitionListener() {
+                    @Override
+                    public void onGeofenceTransition(TransitionGeofence transitionGeofence) {
+                        Log.e(TAG,"geofencing started");
+                        if(transitionGeofence.getTransitionType()==Geofence.GEOFENCE_TRANSITION_ENTER)
+                        {
+                            Log.e(TAG,"Enter");
+                            Toast.makeText(getApplicationContext(),"Entered Location",Toast.LENGTH_LONG).show();
+                        }
+                        else if(transitionGeofence.getTransitionType()==Geofence.GEOFENCE_TRANSITION_EXIT)
+                        {
+                            Log.e(TAG,"Exit");
+                            Toast.makeText(getApplicationContext(),"Exited Location",Toast.LENGTH_LONG).show();
+                        }
+                        else
+                        {
+                            Log.e(TAG,"Dwell");
+                            Toast.makeText(getApplicationContext(),"Everything Else",Toast.LENGTH_LONG).show();
+                        }
+                    }
+                });
+    }
 
     @Override
     public IBinder onBind(Intent arg0)
