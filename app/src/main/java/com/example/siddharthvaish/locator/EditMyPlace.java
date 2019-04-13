@@ -9,10 +9,9 @@ import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.preference.PreferenceManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.FragmentActivity;
+
 import android.os.Bundle;
-import android.support.v4.content.ContextCompat;
+
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -39,6 +38,10 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.List;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentActivity;
 
 
 public class EditMyPlace extends FragmentActivity implements OnMapReadyCallback {

@@ -13,8 +13,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.IBinder;
 
-import android.support.annotation.NonNull;
-import android.support.v4.content.ContextCompat;
+
 import android.telephony.SmsManager;
 import android.util.Log;
 import android.widget.Toast;
@@ -27,6 +26,13 @@ import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
+import androidx.work.Constraints;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 
 public class LocationUpdateService extends Service {
@@ -130,6 +136,7 @@ public class LocationUpdateService extends Service {
         } else if (dwellLocation == null && locationInsideFlag == 1) {
             Log.e(TAG, "exit dwell" + dwellLocationprev);
             locationInsideFlag = 0;
+            dwellLocationprev=null;
             Toast.makeText(getApplicationContext(), "Outside location", Toast.LENGTH_LONG).show();
             SmsManager smsManager = SmsManager.getDefault();
             smsManager.sendTextMessage("+919149386335", null, "Left " + location.getLatitude() + "," + location.getLongitude(), null, null);
@@ -198,6 +205,16 @@ public class LocationUpdateService extends Service {
                 }
             }
         }
+        Constraints constraints = new Constraints.Builder()
+                .setRequiresCharging(true)
+                .build();
+
+        PeriodicWorkRequest saveRequest =new PeriodicWorkRequest.Builder(UploadWorker.class,100,TimeUnit.MILLISECONDS)
+                .setConstraints(constraints)
+                .build();
+
+        WorkManager.getInstance()
+                .enqueue(saveRequest);
     }
 
     private void initializeLocationManager() {

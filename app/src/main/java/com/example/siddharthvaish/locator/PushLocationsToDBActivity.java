@@ -1,8 +1,7 @@
 package com.example.siddharthvaish.locator;
 
 import android.os.Handler;
-import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -29,6 +28,9 @@ import org.json.JSONObject;
 
 import java.util.HashMap;
 import java.util.List;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class PushLocationsToDBActivity extends AppCompatActivity {
     private static final String TAG = PushLocationsToDBActivity.class.getSimpleName();
