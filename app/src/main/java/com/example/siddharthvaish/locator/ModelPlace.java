@@ -1,13 +1,13 @@
 package com.example.siddharthvaish.locator;
 
-public class ModelPolice {
+public class ModelPlace {
     String name;
     String place_id;
     String phoneNumber;
     String latitude;
     String longitude;
 
-    public ModelPolice() {
+    public ModelPlace() {
     }
 
     public String getName() {
