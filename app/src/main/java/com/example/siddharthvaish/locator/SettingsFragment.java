@@ -264,7 +264,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-
+        addmarker.setVisibility(View.VISIBLE);
         LatLng sydney = new LatLng(latitude, longitude);
         final MarkerOptions marker = new MarkerOptions().position(sydney)
                 .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_ORANGE))
@@ -543,7 +543,7 @@ public class SettingsFragment extends Fragment implements OnMapReadyCallback {
                 ModelLocation modelLocation = new ModelLocation();
                 modelLocation.latitude = String.valueOf(latitude);
                 modelLocation.longitude = String.valueOf(longitude);
-                modelLocation.area = String.valueOf(seekBar.getProgress());
+                modelLocation.area = String.valueOf((seekBar.getProgress()*5));
                 final SweetAlertDialog pDialog = new SweetAlertDialog(getContext(), SweetAlertDialog.PROGRESS_TYPE);
                 pDialog.getProgressHelper().setBarColor(Color.parseColor("#A5DC86"));
                 pDialog.setTitleText("Loading...");
