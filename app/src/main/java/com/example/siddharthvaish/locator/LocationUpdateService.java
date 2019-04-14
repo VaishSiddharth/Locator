@@ -16,6 +16,7 @@ import android.os.IBinder;
 
 import android.telephony.SmsManager;
 import android.util.Log;
+import android.widget.TabHost;
 import android.widget.Toast;
 
 import com.google.firebase.database.DataSnapshot;
@@ -45,6 +46,7 @@ public class LocationUpdateService extends Service {
     int locationInsideFlag = 0;
     ModelLocation dwellLocation;
     ModelLocation dwellLocationprev = null;
+    String phoneNum = null;
 
     private class LocationListener implements android.location.LocationListener {
         Location mLastLocation;
@@ -115,35 +117,52 @@ public class LocationUpdateService extends Service {
         sendSMS(location);
     }
 
-    public void sendSMS(Location location) {
-        if (dwellLocation != null && locationInsideFlag == 1) {
-            Log.e(TAG, "sendSMS inside dwell");
-            if (dwellLocationprev == null) {
-                dwellLocationprev = dwellLocation;
-                Log.e(TAG, "null if" + dwellLocationprev);
-                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
-                SmsManager smsManager = SmsManager.getDefault();
-                smsManager.sendTextMessage("+919149386335", null, "Reached " + location.getLatitude() + "," + location.getLongitude(), null, null);
-            } else if (!(dwellLocation.equals(dwellLocationprev))) {
-                Log.e(TAG, "dwell not same as before" + dwellLocation);
-                dwellLocationprev = dwellLocation;
-                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
-                SmsManager smsManager = SmsManager.getDefault();
-                smsManager.sendTextMessage("+919149386335", null, "Reached " + location.getLatitude() + "," + location.getLongitude(), null, null);
-            } else {
-                Log.e(TAG, "Same dwell" + dwellLocationprev);
-            }
-        } else if (dwellLocation == null && locationInsideFlag == 1) {
-            Log.e(TAG, "exit dwell" + dwellLocationprev);
-            locationInsideFlag = 0;
-            dwellLocationprev=null;
-            Toast.makeText(getApplicationContext(), "Outside location", Toast.LENGTH_LONG).show();
-            SmsManager smsManager = SmsManager.getDefault();
-            smsManager.sendTextMessage("+919149386335", null, "Left " + location.getLatitude() + "," + location.getLongitude(), null, null);
-        } else {
-            Log.e(TAG, "sendSMS else");
+    public void sendSMS(final Location location) {
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference().child("PhoneNumber").child("phNo");
+        databaseReference.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (dataSnapshot.getValue() != null) {
+                    phoneNum = dataSnapshot.getValue().toString();
+                    Log.e(TAG,"Phone Number"+phoneNum);
+                    if (phoneNum != null) {
+                        if (dwellLocation != null && locationInsideFlag == 1) {
+                            Log.e(TAG, "sendSMS inside dwell");
+                            if (dwellLocationprev == null) {
+                                dwellLocationprev = dwellLocation;
+                                Log.e(TAG, "null if" + dwellLocationprev);
+                                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
+                                SmsManager smsManager = SmsManager.getDefault();
+                                smsManager.sendTextMessage("+91"+phoneNum, null, "Reached at https://www.google.com/maps/search/?api=1&query=" + location.getLatitude() + "," + location.getLongitude(), null, null);
+                            } else if (!(dwellLocation.equals(dwellLocationprev))) {
+                                Log.e(TAG, "dwell not same as before" + dwellLocation);
+                                dwellLocationprev = dwellLocation;
+                                Toast.makeText(getApplicationContext(), "Inside location", Toast.LENGTH_LONG).show();
+                                SmsManager smsManager = SmsManager.getDefault();
+                                smsManager.sendTextMessage("+91"+phoneNum, null, "Reached at https://www.google.com/maps/search/?api=1&query=" + location.getLatitude() + "," + location.getLongitude(), null, null);
+                            } else {
+                                Log.e(TAG, "Same dwell" + dwellLocationprev);
+                            }
+                        } else if (dwellLocation == null && locationInsideFlag == 1) {
+                            Log.e(TAG, "exit dwell" + dwellLocationprev);
+                            locationInsideFlag = 0;
+                            dwellLocationprev = null;
+                            Toast.makeText(getApplicationContext(), "Outside location", Toast.LENGTH_LONG).show();
+                            SmsManager smsManager = SmsManager.getDefault();
+                            smsManager.sendTextMessage("+91"+phoneNum, null, "Left location https://www.google.com/maps/search/?api=1&query=" + location.getLatitude() + "," + location.getLongitude(), null, null);
+                        } else {
+                            Log.e(TAG, "sendSMS else");
 
-        }
+                        }
+                    }
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     LocationListener[] mLocationListeners = new LocationListener[]{
@@ -209,7 +228,7 @@ public class LocationUpdateService extends Service {
                 .setRequiresCharging(true)
                 .build();
 
-        PeriodicWorkRequest saveRequest =new PeriodicWorkRequest.Builder(UploadWorker.class,100,TimeUnit.MILLISECONDS)
+        PeriodicWorkRequest saveRequest = new PeriodicWorkRequest.Builder(UploadWorker.class, 100, TimeUnit.MILLISECONDS)
                 .setConstraints(constraints)
                 .build();
 
