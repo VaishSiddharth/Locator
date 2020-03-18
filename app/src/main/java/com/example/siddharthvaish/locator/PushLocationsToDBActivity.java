@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
@@ -34,8 +35,14 @@ import androidx.appcompat.app.AppCompatActivity;
 
 public class PushLocationsToDBActivity extends AppCompatActivity {
     private static final String TAG = PushLocationsToDBActivity.class.getSimpleName();
-    Button pushdata;
-    String defURL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=26.2502016,78.169562&radius=100000&type=police&key=AIzaSyDIqdCLT3Q6zljPKkUKXyx3rJX4Zjk928o";
+    TextView pushdata, createaccount;
+    //    String defURL = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=26.2502016,78.169562&radius=100000&type=police&key=AIzaSyDIqdCLT3Q6zljPKkUKXyx3rJX4Zjk928o";
+    String defURL;
+    String Police = "police";
+    String Hospital = "hospital";
+    String urlStart = "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=";
+    String urlMid = "&radius=5000&type=";
+    String urlEnd = "&key=AIzaSyDIqdCLT3Q6zljPKkUKXyx3rJX4Zjk928o";
     String defURLp1 = "https://maps.googleapis.com/maps/api/place/details/json?placeid=";
     String defURLp2 = "&fields=name,formatted_phone_number&key=AIzaSyDIqdCLT3Q6zljPKkUKXyx3rJX4Zjk928o";
     List<ModelPlace> modelPlaceList;
@@ -43,25 +50,39 @@ public class PushLocationsToDBActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_push_locations_to_db);
+        setContentView(R.layout.activity_login);
+        PreferenceManager.init(getApplicationContext());
+        final String latitude = PreferenceManager.getStringValue("latitude");
+        final String longitude = PreferenceManager.getStringValue("longitude");
         pushdata = findViewById(R.id.pushdata);
+        createaccount = findViewById(R.id.createaccount);
+
+        createaccount.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                defURL = urlStart + latitude + "," + longitude + urlMid + Hospital + urlEnd;
+                sendDataToDB(defURL,"Hospital");
+                sendDetailsToDB("Hospital");
+            }
+        });
         pushdata.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //sendDataToDB(defURL);
-                //sendDetailsToDB();
+                defURL = urlStart + latitude + "," + longitude + urlMid + Police + urlEnd;
+                sendDataToDB(defURL,"Police");
+                sendDetailsToDB("Police");
             }
         });
     }
 
-    public void sendDetailsToDB() {
-        final DatabaseReference myref = FirebaseDatabase.getInstance().getReference().child("Hospital");
+    public void sendDetailsToDB(String type) {
+        final DatabaseReference myref = FirebaseDatabase.getInstance().getReference().child(type);
         myref.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 for (final DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     ModelPlace modelPlace = snapshot.getValue(ModelPlace.class);
-                    if (modelPlace != null&&snapshot.getKey()!=null) {
+                    if (modelPlace != null && snapshot.getKey() != null) {
                         Log.e(TAG, "modelPlace != null");
                         String placeId = modelPlace.getPlace_id();
                         Log.e(TAG, "The url before calling is " + defURLp1 + placeId + defURLp2);
@@ -111,7 +132,7 @@ public class PushLocationsToDBActivity extends AppCompatActivity {
 
     }
 
-    public void sendDataToDB(String URL) {
+    public void sendDataToDB(String URL, final String type) {
         Log.e(TAG, "The url before calling is " + URL);
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         StringRequest stringRequest = new StringRequest(Request.Method.GET, URL, new Response.Listener<String>() {
@@ -133,7 +154,7 @@ public class PushLocationsToDBActivity extends AppCompatActivity {
                         modelPlace.setPlace_id(place_id);
                         modelPlace.setLatitude(latitude);
                         modelPlace.setLongitude(longitude);
-                        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child("Police");
+                        DatabaseReference reference = FirebaseDatabase.getInstance().getReference().child(type);
                         reference.push().setValue(modelPlace);
                         //Log.e(TAG,name+place_id+latitude+longitude);
 
@@ -147,7 +168,7 @@ public class PushLocationsToDBActivity extends AppCompatActivity {
                             handler.postDelayed(new Runnable() {
                                 @Override
                                 public void run() {
-                                    sendDataToDB(defURL + "&pagetoken=" + nextPageToken);
+//                                    sendDataToDB(defURL + "&pagetoken=" + nextPageToken);
                                 }
                             }, 5000);
 

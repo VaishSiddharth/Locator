@@ -39,6 +39,7 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
+
 import cn.pedant.SweetAlert.SweetAlertDialog;
 
 import static java.net.Proxy.Type.HTTP;
@@ -73,15 +74,15 @@ public class HomeFragment extends Fragment {
     private static final float LOCATION_DISTANCE = 10f;
     FirebaseDatabase database = FirebaseDatabase.getInstance();
     float shortestDistancePolice = 100000000f;
-    float shortestDistanceHospital= 100000000f;
+    float shortestDistanceHospital = 100000000f;
     List<ModelPlace> modelPlaceList;
     List<ModelPlace> modelPlaceListHospital;
     TextView namePoliceStation;
     TextView phonePoliceStation;
     TextView nameHospital;
     TextView phoneHospital;
-    ImageView emergencyPolice,emergencyHospital;
-    String namepolice,namehospital,phoneNumberpolice,phoneNumberHospital;
+    ImageView emergencyPolice, emergencyHospital;
+    String namepolice, namehospital, phoneNumberpolice, phoneNumberHospital;
 
     // TODO: Rename and change types of parameters
     private String mParam1;
@@ -156,6 +157,8 @@ public class HomeFragment extends Fragment {
         public void onLocationChanged(Location location) {
             Log.e(TAG, "onLocationChanged: " + location);
             mLastLocation.set(location);
+            PreferenceManager.setStringValue("latitude", String.valueOf(location.getLatitude()));
+            PreferenceManager.setStringValue("longitude", String.valueOf(location.getLongitude()));
             currentLocation(location);
         }
 
@@ -297,14 +300,22 @@ public class HomeFragment extends Fragment {
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_home, container, false);
+        PreferenceManager.init(getContext());
         Button startservice = view.findViewById(R.id.startservice);
         Button stopservice = view.findViewById(R.id.stopservice);
+        Button login = view.findViewById(R.id.login);
         namePoliceStation = view.findViewById(R.id.namePoliceStation);
         phonePoliceStation = view.findViewById(R.id.phonePoliceStation);
         nameHospital = view.findViewById(R.id.nameHospital);
         phoneHospital = view.findViewById(R.id.phoneHospital);
-        emergencyHospital=view.findViewById(R.id.emergencyhospital);
-        emergencyPolice=view.findViewById(R.id.emergencypolice);
+        emergencyHospital = view.findViewById(R.id.emergencyhospital);
+        emergencyPolice = view.findViewById(R.id.emergencypolice);
+        login.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startActivity(new Intent(getContext(), PushLocationsToDBActivity.class));
+            }
+        });
         stopservice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -321,8 +332,8 @@ public class HomeFragment extends Fragment {
         emergencyoptions();
         return view;
     }
-    public void emergencyoptions()
-    {
+
+    public void emergencyoptions() {
         emergencyPolice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -345,8 +356,8 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onClick(SweetAlertDialog sweetAlertDialog) {
                         SmsManager smsManager = SmsManager.getDefault();
-                        smsManager.sendTextMessage("+919149386335", null, "Emergency at location https://www.google.com/maps/search/?api=1&query="+latitude+","+longitude, null, null);
-                        Toast.makeText(getContext(),"Sending SMS",Toast.LENGTH_LONG).show();
+                        smsManager.sendTextMessage("+919149386335", null, "Emergency at location https://www.google.com/maps/search/?api=1&query=" + latitude + "," + longitude, null, null);
+                        Toast.makeText(getContext(), "Sending SMS", Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
                     }
                 });
@@ -375,8 +386,8 @@ public class HomeFragment extends Fragment {
                     @Override
                     public void onClick(SweetAlertDialog sweetAlertDialog) {
                         SmsManager smsManager = SmsManager.getDefault();
-                        smsManager.sendTextMessage("+919149386335", null, "Ambulance required at location https://www.google.com/maps/search/?api=1&query="+latitude+","+longitude, null, null);
-                        Toast.makeText(getContext(),"Sending SMS",Toast.LENGTH_LONG).show();
+                        smsManager.sendTextMessage("+919149386335", null, "Ambulance required at location https://www.google.com/maps/search/?api=1&query=" + latitude + "," + longitude, null, null);
+                        Toast.makeText(getContext(), "Sending SMS", Toast.LENGTH_LONG).show();
                         pDialog.dismiss();
                     }
                 });
