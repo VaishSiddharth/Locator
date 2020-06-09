@@ -157,6 +157,7 @@
                             android:gravity="center"
                             android:padding="8dp"
                             android:text="Login"
+                            android:onClick="onLoginButtonClick"
                             android:textColor="@color/white"
                             android:textSize="17sp" />
 
